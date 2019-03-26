@@ -1,0 +1,23 @@
+laravel websockets docs ------------------------------------------------------------------------------------------------>
+
+1. composer require beyondcode/laravel-websockets
+
+// for statistics migration 
+2. php artisan vendor:publish --provider="BeyondCode\LaravelWebSockets\WebSocketsServiceProvider" --tag="migrations"
+
+3. php artisan migrate
+
+// websockets configurations
+4. php artisan vendor:publish --provider="BeyondCode\LaravelWebSockets\WebSocketsServiceProvider" --tag="config"
+
+//=========================================================================================================================
+
+// laravel websockets relies on pusher APIs
+5   install pusher libraries  php library
+5.1 install pusher js 
+
+//=========================================================================================================================
+6. install laravel echo 
+*enable laravel echo 
+
+
