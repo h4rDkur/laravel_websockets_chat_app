@@ -23,6 +23,28 @@ class chatController extends Controller
     }
 
 
+    public function getCurrentSubs(){
+
+        $subs = DB::table("conversation")
+        ->where([
+            ["user_id1","=",Auth::user()->id],
+            ["user_id2","=",Auth::user()->id,"or"]
+        ])
+        ->get();
+
+        foreach($subs as $sub){
+
+            $user_id = $sub->user_id1 == Auth::user()->id ? $sub->user_id2 : $sub->user_id1;
+            $sub->user_details = DB::table("users")->where("id", $user_id)->select("id","name","email")->get();
+
+        }
+
+        return json_encode($subs);
+
+    }
+
+
+
     public function myPrivateSubs(){
 
     	$my_private_subs = DB::table("conversation")
@@ -78,6 +100,15 @@ class chatController extends Controller
     	return json_encode($datas);
 
     }
+
+
+    public function getMessages(Request $req){
+
+        $messages = DB::table("conversation_reply")->where("c_id_fk", $req->convo_id)->orderBy("cr_id", "ASC")->get();
+        return json_encode($messages);
+
+    }
+
 
     public function sendMessage(Request $req){
 

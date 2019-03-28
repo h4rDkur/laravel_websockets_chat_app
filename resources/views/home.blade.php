@@ -40,21 +40,16 @@
           <div class="row">
             <div class="col-md-3">
               
-{{--               <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  Cras justo odio
-                  <span class="badge badge-primary badge-pill">14</span>
+              <ul class="list-group">
+
+                <li ng-repeat="contact in contacts_list" class="list-group-item d-flex justify-content-between align-items-center" ng-click="get_messages(contact.c_id)" style="cursor: pointer">
+                  <# contact.user_details[0].email #>
+                  <small><# contact.status #></small>
+                  <span class="badge badge-primary badge-pill">0</span>
                 </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  Dapibus ac facilisis in
-                  <span class="badge badge-primary badge-pill">2</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  Morbi leo risus
-                  <span class="badge badge-primary badge-pill">1</span>
-                </li>
+
               </ul>
- --}}
+
 
             </div>
             <div class="col-md-9">
@@ -63,10 +58,11 @@
 
 
                 <div class="col-md-12">
-                  <div style="min-height:200px; max-height:40px; border:1px solid #ccc; border-radius: 5px;">
-                    <div style="padding:10px">
+                  <div style="min-height:200px; max-height:40px; border:1px solid #ccc; border-radius: 5px;  overflow: auto;">
+
+                    <div style="padding:10px" ng-repeat="message in messages">
                       <span class="badge badge-warning">John</span>
-                      : kqjwek ksjad kjqiwue kjzk jqiweu
+                      : <# message.reply #>
                     </div>
                     
                   </div>
@@ -151,7 +147,10 @@ $scope.sub_to_all_my_private_channel = function(){
           // event   listen -----------------> 
           .listen('sendMessage', (e) => {
               console.log("i heard something some subsrcing to many channels \n");
-              console.log(e);
+              
+              // console.log(e.datas.message); 
+              // console.log(e.datas.message);
+              // $scope.messages.reply.push(e.datas.message);
           });
 
     });
@@ -213,7 +212,12 @@ $scope.check_subscription = async function() {
           // event   listen -----------------> 
           .listen('sendMessage', (e) => {
               console.log("i heard something \n");
+              //
+              // add this to message list 
+              //
               console.log(e);
+
+              console.log("add me to message list");
           });
 
     }
@@ -253,7 +257,12 @@ $scope.check_subscription_from_others = async function() {
           // event   listen -----------------> 
           .listen('sendMessage', (e) => {
               console.log("i heard something \n");
+              //
+              // add this to message list 
+              //
               console.log(e);
+
+              console.log("add me to message list");
           });
 
     }
@@ -285,20 +294,6 @@ $scope.send_message = function(){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ================================================================================================
 
 $scope.listen_for_other_noise = function(){
@@ -323,6 +318,102 @@ $scope.listen_for_other_noise = function(){
 
 $scope.listen_for_other_noise();
 
+
+//============================================================================================================
+
+
+// subsribe to my own PRESENCE TO LET OTHER USER KNOW MY STATUS
+window.Echo.join(`status_presence`+'{{Auth::user()->id}}')
+.here((users) => {
+   console.log("my status presence")
+})
+.joining((user) => {
+   console.log("im joining");
+})
+.leaving((user) => {
+   console.log("img leaving");
+});
+
+
+
+// FOREACH CONTACTS SUBSCRIBE USING THEIR IDS.
+
+$scope.get_contact_list =function(){
+
+    $http.get('/my_subscriptions').then(function successCallback(response){
+
+        $scope.contacts_list = response.data;
+
+        angular.forEach($scope.contacts_list, function(data, key) {
+
+              data.status = "";
+
+              console.log(data.user_details[0].id)
+              // presence channel ---------------------------------------------->
+              window.Echo.join(`status_presence`+data.user_details[0].id)
+              .here((users) => {
+
+                 console.log(users);
+                  //if users in this presence is greater than 1 then status is online
+                  if(users.length>1){
+                      console.log(users[1].email);
+                      // timeout fix some var reference thats not working.
+                      $timeout(function(){
+                            $scope.contacts_list[key].status = "online";
+                      })
+                  }
+
+              })
+              .joining((user) => {
+
+                   $scope.contacts_list[key].status = "online";
+
+              })
+              .leaving((user) => {
+
+                    $scope.contacts_list[key].status = "offline";
+
+              });
+
+        });
+
+    });
+}
+
+$scope.get_contact_list();
+
+
+
+//=============================================================================================================
+
+
+$scope.get_messages = function(convo_id){
+
+
+    $scope.current_channel.channel_id = convo_id;
+
+    console.log("gettings messages" + convo_id);
+
+
+    data = {
+        "convo_id" :  convo_id
+    };
+
+    $http({method: 'POST',url: '/messages', data}).then(function successCallback(response) {
+
+        console.log(response.data);
+        $scope.messages = response.data;
+
+    }, function errorCallback(response) {
+    // called asynchronously if an error occurs
+    // or server returns response with an error status.
+    });
+
+
+}
+
+
+//=============================================================================================================
 
 
     // === INIT SUB PUBLIC CHANNEL ======================================================
@@ -360,8 +451,7 @@ $scope.listen_for_other_noise();
     });
 
 
-
-
+ //==== MY STATUS PRESENCE ====================================================================
 
 
 

@@ -29,3 +29,7 @@ Route::post('/send_message',  'chatController@sendMessage');
 
 
 Route::get("/my_private_subs", 'chatController@myPrivateSubs');
+
+Route::get("/my_subscriptions", "chatController@getCurrentSubs");
+
+ROute::post("/messages",   "chatController@getMessages");

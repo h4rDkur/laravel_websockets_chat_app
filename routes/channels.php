@@ -35,5 +35,11 @@ Broadcast::channel('private_room{channel_id}', function ($user) {
 });
 
 
+Broadcast::channel('status_presence{user_id}', function ($user) {
+   	 return $user;
+});
+
+
+
 
 
