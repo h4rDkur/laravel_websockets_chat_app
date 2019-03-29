@@ -60,10 +60,12 @@
                 <div class="col-md-12">
                   <div style="min-height:200px; max-height:40px; border:1px solid #ccc; border-radius: 5px;  overflow: auto;">
 
-                    <div style="padding:10px" ng-repeat="message in messages">
+                    <div style="padding:10px" ng-repeat="message in messages track by $index" id="anchor<#$index+1#>" >
                       <span class="badge badge-warning">John</span>
                       : <# message.reply #>
                     </div>
+
+                    <span id="focusHeremessage"></span>
                     
                   </div>
                   <!-- list of chat -->
@@ -77,6 +79,7 @@
                   </div>
                 </div>
 
+                <div class="col-md-12"><button class="btn btn-warning" ng-click="imTyping()">IM TYPING</button></div>
 
 
               </div><!-- row -->
@@ -103,7 +106,7 @@ var rootApp = angular.module('rootApp', [], function($interpolateProvider) {
     $interpolateProvider.endSymbol('#>');
 });
 
-rootApp.controller('rootController', function($scope, $http, $timeout, $compile, $rootScope) { 
+rootApp.controller('rootController', function($scope, $http, $timeout, $compile, $rootScope, $location, $anchorScroll) { 
 
 
 //  subscribed channel -------------------------------------------->
@@ -123,6 +126,8 @@ rootApp.controller('rootController', function($scope, $http, $timeout, $compile,
 
 
 $scope.my_private_subs_ids = [];
+
+$scope.messages = [];
 
 $scope.get_my_private_subs =function(){
 
@@ -147,7 +152,24 @@ $scope.sub_to_all_my_private_channel = function(){
           // event   listen -----------------> 
           .listen('sendMessage', (e) => {
               console.log("i heard something some subsrcing to many channels \n");
-              
+                 
+                console.log(e);
+             if($scope.current_channel.channel_id!=null){   
+
+                 console.log($scope.messages);
+
+                 if($scope.current_channel.channel_id == e.datas.channel_id ){
+                  $timeout(function(){
+
+                      $scope.messages.push({reply:e.datas.message,name:"walalala"});
+
+                   $location.hash('anchor'+$scope.messages.length);
+                   $anchorScroll();
+
+                  },200);
+                  
+                 }  
+              }   
               // console.log(e.datas.message); 
               // console.log(e.datas.message);
               // $scope.messages.reply.push(e.datas.message);
@@ -346,9 +368,8 @@ $scope.get_contact_list =function(){
 
         angular.forEach($scope.contacts_list, function(data, key) {
 
-              data.status = "";
+              data.status = "offline";
 
-              console.log(data.user_details[0].id)
               // presence channel ---------------------------------------------->
               window.Echo.join(`status_presence`+data.user_details[0].id)
               .here((users) => {
@@ -356,7 +377,7 @@ $scope.get_contact_list =function(){
                  console.log(users);
                   //if users in this presence is greater than 1 then status is online
                   if(users.length>1){
-                      console.log(users[1].email);
+                      console.log("im online " + users[1].email);
                       // timeout fix some var reference thats not working.
                       $timeout(function(){
                             $scope.contacts_list[key].status = "online";
@@ -387,10 +408,55 @@ $scope.get_contact_list();
 //=============================================================================================================
 
 
+
+
+ //================== IMG TYPING  =============================================================
+
+ $scope.imTyping = function(){
+
+
+    console.log("typing function triggered" + $scope.current_channel.channel_id);
+
+    let channel = Echo.private('whisper'+$scope.current_channel.channel_id);
+
+    channel.whisper('typing', {
+          typing: true
+      });
+
+ }
+
+$scope.listenWhisper = function(convo_id){
+
+  console.log("im listening to whisper channel" + convo_id);
+
+
+$timeout(function(){
+  
+     Echo.private('whisper'+convo_id)
+  .listenForWhisper('typing', (e) => {
+    console.log(e);
+  });
+
+},200)
+
+
+}
+
+
+
+$scope.w_id = "";
+
+
+
+
+
 $scope.get_messages = function(convo_id){
 
 
+
     $scope.current_channel.channel_id = convo_id;
+
+    $scope.listenWhisper(convo_id);
 
     console.log("gettings messages" + convo_id);
 
@@ -401,9 +467,17 @@ $scope.get_messages = function(convo_id){
 
     $http({method: 'POST',url: '/messages', data}).then(function successCallback(response) {
 
+        console.log("this are the messages");
         console.log(response.data);
         $scope.messages = response.data;
 
+        $timeout(function(){
+
+            $location.hash('anchor'+$scope.messages.length);
+        $anchorScroll();
+  
+        },500)
+        
     }, function errorCallback(response) {
     // called asynchronously if an error occurs
     // or server returns response with an error status.
@@ -451,26 +525,10 @@ $scope.get_messages = function(convo_id){
     });
 
 
- //==== MY STATUS PRESENCE ====================================================================
 
 
 
-    // $rootScope.post_new_comment = function(){
-     
-    //  console.log("img typing");
 
-    //    let channel = Echo.private('chat');
-
-    //        channel.whisper('typing', {
-    //             typing: true
-    //         });
-
-    // }
-
-    // Echo.private('chat')
-    // .listenForWhisper('typing', (e) => {
-    //     console.log(e);
-    // });
 
 
 

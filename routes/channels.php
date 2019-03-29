@@ -40,6 +40,13 @@ Broadcast::channel('status_presence{user_id}', function ($user) {
 });
 
 
+Broadcast::channel('whisper{whisper_channel}', function ($user) {
+   	 return $user;
+});
+
+
+
+
 
 
 

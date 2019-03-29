@@ -104,7 +104,24 @@ class chatController extends Controller
 
     public function getMessages(Request $req){
 
-        $messages = DB::table("conversation_reply")->where("c_id_fk", $req->convo_id)->orderBy("cr_id", "ASC")->get();
+        $messages = DB::table("conversation_reply")
+
+        ->where("c_id_fk", $req->convo_id)
+
+        ->join("users","conversation_reply.cr_user_id","=","users.id")
+
+        ->select(
+            "users.id",
+            "users.name",
+            "users.email",
+
+            "conversation_reply.reply",
+            "conversation_reply.c_id_fk"
+        )
+
+        ->orderBy("cr_id", "ASC")->get();
+
+
         return json_encode($messages);
 
     }
